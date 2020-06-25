@@ -8,3 +8,7 @@ Retrieve the details of given license no
     2)More faster retrieval of data as there is no need of captcha solving.
     
 ## To run the program
+    
+    1)Install requirements.txt
+    
+    
