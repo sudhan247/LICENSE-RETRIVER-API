@@ -20,3 +20,8 @@ Retrieve the details of given license no
     5) Then enter the License No and DOB in specified format
     
     
+## SampleData
+    
+    License No: DL-0420110149646
+    
+    DOB: 09-02-1976
