@@ -3,7 +3,7 @@ import re
 import requests
 import json
 from bs4 import BeautifulSoup, SoupStrainer
-
+import lxml.html
 def getdata(licenseno,dob):
     #URL's used for retrieval
     home_url = 'https://parivahan.gov.in/rcdlstatus/?pur_cd=101'
@@ -16,7 +16,7 @@ def getdata(licenseno,dob):
     soup = BeautifulSoup(r.text, 'html.parser')
     viewstate = soup.select('input[name="javax.faces.ViewState"]')[0]['value']
 
-
+    
     #Finding the first button to check status
     i = 0
     for match in soup.find_all('button', id=re.compile("form_rcdl")):
@@ -41,14 +41,11 @@ def getdata(licenseno,dob):
 
     #Retrieval of status with the available data
     r = requests.post(url=post_url, data=data, cookies=cookies)
-    soup = BeautifulSoup(r.text, 'html.parser')
+    root = lxml.html.fromstring(r.text.encode())
 
-
+    
     #Getting the table values
-    table = SoupStrainer('tr')
-    soup = BeautifulSoup(soup.get_text(), 'html.parser', parse_only=table)
-    data=[i for i in soup.get_text().split('\n')
-          if(len(i))!=0]+[i.text for i in soup.findAll("td")[-3:]]
+    data=root.xpath('//tr/td//text()')
 
 
     #Parsing the data and storing it in a dictionary details
@@ -72,27 +69,33 @@ def getdata(licenseno,dob):
     ##Solving Non-Transport Format
     details[topic]=dict()
     details[topic][data[10]]=dict()
-    details[topic][data[10]][data[11][:4]]=data[11][6:]
-    details[topic][data[10]][data[12][:2]]=data[12][4:]
+    details[topic][data[10]][data[11][:4]]=data[12]
+    details[topic][data[10]][data[13][:2]]=data[14]
 
     ##Solving Transport Format
-    details[topic][data[13]]=dict()
-    details[topic][data[13]][data[14][:4]]=data[14][6:]
-    details[topic][data[13]][data[15][:2]]=data[15][4:]
+    details[topic][data[15]]=dict()
+    details[topic][data[15]][data[16][:4]]=data[17]
+    details[topic][data[15]][data[18][:2]]=data[19]
 
     ##Solving other fields
-    details[topic][data[16]]=data[17]
-    details[topic][data[18]]=data[19]
+    details[topic][data[20]]=data[21]
+    details[topic][data[22]]=data[23]
 
 
     #Solving the Third table 'Class of Vehicle Details' format
     topic='Class of Vehicle Details'
     details[topic]=dict()
-    details[topic][data[20][:12]]=data[21]
-    details[topic][data[20][12:28]]=data[22]
-    details[topic][data[20][28:37]]=data[23]
+    details[topic]["COV Category"]=[]
+    details[topic]["Class Of Vehicle"]=[]
+    details[topic]["COV Issue"]=[]
+    data=data[24:]
+    while(len(data)!=0):
+        details[topic]["COV Category"].append(data[0])
+        details[topic]["Class Of Vehicle"].append(data[1])
+        details[topic]["COV Issue"].append(data[2])
+        data=data[3:]
 
-
+    
     #Converting created dict to json format
     result=json.dumps(details)
     return (result)
@@ -111,4 +114,3 @@ try:
     print(getdata(licenseno,dob))
 except:
     print('Invalid Details')
-    
